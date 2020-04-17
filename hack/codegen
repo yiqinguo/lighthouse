@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+BASE_DIR=$(cd $(dirname $0)/.. && pwd)
+source ${BASE_DIR}/hack/common.sh
+
+(
+  export BASE_DIR
+  export PACKAGE
+  export OUTPUT_PATH
+  rm -rf ${OUTPUT_PATH}/${PACKAGE_PREFIX}
+  mkdir -p ${OUTPUT_PATH}/${PACKAGE_PREFIX}
+  ln -s ${BASE_DIR} ${OUTPUT_PATH}/${PACKAGE_PREFIX}
+  go generate ${PACKAGE}/pkg/codegen
+)
