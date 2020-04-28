@@ -24,7 +24,7 @@ type hookManager struct {
 	timeout       time.Duration
 	listenAddress string
 	mux           *mux.Router
-	proxy         http.Handler
+	backend       http.Handler
 }
 
 func NewHookManager() *hookManager {
@@ -78,7 +78,7 @@ func (hm *hookManager) Run(stop <-chan struct{}) error {
 func (hm *hookManager) InitFromConfig(config *componentconfig.HookConfiguration) error {
 	klog.Infof("Hook timeout: %d seconds", config.Timeout)
 	hm.timeout = config.Timeout * time.Second
-	hm.proxy = newReverseProxy(config.RemoteEndpoint)
+	hm.backend = newReverseProxy(config.RemoteEndpoint)
 	hm.listenAddress = config.ListenAddress
 
 	patternMap := make(map[componentconfig.HookStage][]HookHandler)
@@ -101,9 +101,11 @@ func (hm *hookManager) InitFromConfig(config *componentconfig.HookConfiguration)
 		klog.V(2).Infof("Build router: %s %s", st.Method, st.URLPattern)
 		chainHandler := hm.buildHookHandlerFunc(handlers)
 		hm.mux.Methods(st.Method).Path(st.URLPattern).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			chainHandler(w, r)
+			if err := chainHandler(w, r); err != nil {
+				return
+			}
 			klog.V(4).Infof("Send data to backend path %s", r.URL.Path)
-			hm.proxy.ServeHTTP(w, r)
+			hm.backend.ServeHTTP(w, r)
 			klog.V(4).Infof("Finish backend path %s", r.URL.Path)
 		})
 	}
@@ -111,8 +113,8 @@ func (hm *hookManager) InitFromConfig(config *componentconfig.HookConfiguration)
 	return nil
 }
 
-func (hm *hookManager) buildHookHandlerFunc(handlers []HookHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (hm *hookManager) buildHookHandlerFunc(handlers []HookHandler) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		ctx, cancel := context.WithTimeout(context.Background(), hm.timeout)
 		defer cancel()
 
@@ -120,7 +122,7 @@ func (hm *hookManager) buildHookHandlerFunc(handlers []HookHandler) http.Handler
 		if err != nil {
 			klog.Errorf("can't read request body: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
-			return
+			return err
 		}
 
 		klog.V(4).Infof("PreHook request %s, body: %s", r.URL.Path, string(bodyBytes))
@@ -169,12 +171,14 @@ func (hm *hookManager) buildHookHandlerFunc(handlers []HookHandler) http.Handler
 			klog.Errorf("can't perform hook, %v", hookErr)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(hookErr.Error()))
+			return hookErr
 		}
 
 		klog.V(4).Infof("After preHook request %s, body: %s", r.URL.Path, string(bodyBytes))
 		newBody := bytes.NewBuffer(bodyBytes)
 		r.Body = ioutil.NopCloser(newBody)
 		r.ContentLength = int64(newBody.Len())
+		return nil
 	}
 }
 
@@ -184,6 +188,5 @@ func (hm *hookManager) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		hm.mux.ServeHTTP(w, req)
 		return
 	}
-	klog.V(4).Infof("Non-hooked request %s", req.URL.String())
-	hm.proxy.ServeHTTP(w, req)
+	hm.backend.ServeHTTP(w, req)
 }

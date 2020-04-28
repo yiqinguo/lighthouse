@@ -56,7 +56,7 @@ func (hc *hookerConnector) Hook(ctx context.Context, patch *PatchData, path stri
 
 		if resp != nil {
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && !hc.allowFailure() {
-				return fmt.Errorf("post is not success")
+				return fmt.Errorf("post is not success, status code is %d", resp.StatusCode)
 			}
 
 			klog.V(4).Infof("Decode hook response %s for %s", path, hc.name)
