@@ -18,4 +18,5 @@ require (
 	k8s.io/component-base v0.17.4
 	k8s.io/gengo v0.0.0-20190822140433-26a664648505
 	k8s.io/klog v1.0.0
+	github.com/coreos/go-systemd/v22 v22.0.0
 )

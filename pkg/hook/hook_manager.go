@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	systemd "github.com/coreos/go-systemd/v22/daemon"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/gorilla/mux"
 	"k8s.io/apimachinery/pkg/types"
@@ -65,6 +66,15 @@ func (hm *hookManager) Run(stop <-chan struct{}) error {
 
 	<-ready
 	klog.Infof("Hook manager is running")
+
+	sent, err := systemd.SdNotify(true, "READY=1\n")
+	if err != nil {
+		klog.Warningf("Unable to send systemd daemon successful start message: %v\n", err)
+	}
+
+	if !sent {
+		klog.Warningf("Unable to send systemd daemonType=notify in systemd service file?")
+	}
 
 	select {
 	case <-stop:
