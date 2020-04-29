@@ -41,5 +41,6 @@ func newReverseProxy(remoteEndpoint string) *reverseProxy {
 }
 
 func (rp *reverseProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	klog.V(8).Infof("Serve request %s", req.URL.String())
 	rp.proxy.ServeHTTP(w, req)
 }
