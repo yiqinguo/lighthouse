@@ -7,12 +7,13 @@ Lighthouse is a framework to pre-hook runtime request. With this hook, we can dy
 
 ![LighthouseDesign.svg](doc/LighthouseDesign.svg)
 
-# Hook Configuration
+# Hook Configuration example
 
 ```
 apiVersion: lighthouse.io/v1alpha1
 kind: hookConfiguration
 timeout: 10
+# This field is for kubelet --docker-endpoint
 listenAddress: unix:///var/run/lighthouse.sock
 webhooks:
 - name: lighthouse.io
@@ -22,3 +23,7 @@ webhooks:
   - urlPattern: /containers/create
     method: post
 ```
+
+# How to use it in Kubernetes
+
+Set kubelet options `--docker-endpoint` to the field of `listenAddress` in your hook configuration

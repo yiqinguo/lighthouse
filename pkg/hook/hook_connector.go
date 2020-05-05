@@ -20,7 +20,7 @@ type hookerConnector struct {
 	client        *http.Client
 }
 
-var _ HookHandler = &hookerConnector{}
+var _ HookHandler = (*hookerConnector)(nil)
 
 func newHookConnector(name, endpoint string, failurePolicy componentconfig.FailurePolicyType) *hookerConnector {
 	hc := &hookerConnector{
