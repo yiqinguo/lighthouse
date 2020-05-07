@@ -73,7 +73,7 @@ func (hm *hookManager) Run(stop <-chan struct{}) error {
 	}
 
 	if !sent {
-		klog.Warningf("Unable to send systemd daemonType=notify in systemd service file?")
+		klog.Warningf("Unable to send systemd daemon Type=notify in systemd service file?")
 	}
 
 	select {

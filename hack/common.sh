@@ -11,15 +11,19 @@ mkdir -p ${OUTPUT_PATH}
 USER_ID=$(id -u)
 GROUP_ID=$(id -g)
 
-GIT_COMMIT=$(git rev-parse "HEAD^{commit}")
+if [[ -z ${GIT_COMMIT:-""} ]]; then
+  GIT_COMMIT=$(git rev-parse "HEAD^{commit}")
+fi
 BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 GIT_VERSION=$(cat ${BASE_DIR}/VERSION)
-if git_status=$(git status --porcelain 2>/dev/null) && [[ -z ${git_status} ]]; then
-  TREE_STATE="clean"
-else
-  TREE_STATE="-dirty"
-  GIT_VERSION+=${TREE_STATE}
+if [[ -z ${GIT_STATUS:-""} ]]; then
+  if GIT_STATUS=$(git status --porcelain 2>/dev/null) && [[ -z ${GIT_STATUS} ]]; then
+    TREE_STATE="clean"
+  else
+    TREE_STATE="-dirty"
+    GIT_VERSION+=${TREE_STATE}
+  fi
 fi
 
 if [[ "${GIT_VERSION}" =~ ^v([0-9]+)\.([0-9]+)(\.[0-9]+)?([-].*)?([+].*)?$ ]]; then
