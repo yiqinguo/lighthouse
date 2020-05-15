@@ -37,7 +37,7 @@ func newHookConnector(name, endpoint string, failurePolicy componentconfig.Failu
 	return hc
 }
 
-func (hc *hookerConnector) Hook(ctx context.Context, patch *PatchData, path string, body []byte) error {
+func (hc *hookerConnector) performHook(ctx context.Context, patch *PatchData, path string, body []byte) error {
 	url := fmt.Sprintf("http://%s", hc.endpoint)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil && !hc.allowFailure() {
@@ -48,7 +48,7 @@ func (hc *hookerConnector) Hook(ctx context.Context, patch *PatchData, path stri
 	if req != nil {
 		req.URL.Path = path
 
-		klog.V(4).Infof("Send hook request %s for %s", path, hc.name)
+		klog.V(4).Infof("Send request %s for %s", path, hc.name)
 		resp, err := hc.client.Do(req)
 		if err != nil && !hc.allowFailure() {
 			return err
@@ -59,12 +59,20 @@ func (hc *hookerConnector) Hook(ctx context.Context, patch *PatchData, path stri
 				return fmt.Errorf("post is not success, status code is %d", resp.StatusCode)
 			}
 
-			klog.V(4).Infof("Decode hook response %s for %s", path, hc.name)
+			klog.V(4).Infof("Decode response %s for %s", path, hc.name)
 			return json.NewDecoder(resp.Body).Decode(patch)
 		}
 	}
 
 	return nil
+}
+
+func (hc *hookerConnector) PreHook(ctx context.Context, patch *PatchData, path string, body []byte) error {
+	return hc.performHook(ctx, patch, HookPath(componentconfig.PreHookType, path), body)
+}
+
+func (hc *hookerConnector) PostHook(ctx context.Context, patch *PatchData, path string, body []byte) error {
+	return hc.performHook(ctx, patch, HookPath(componentconfig.PostHookType, path), body)
 }
 
 func (hc *hookerConnector) allowFailure() bool {

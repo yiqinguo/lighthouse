@@ -19,7 +19,7 @@ func init() {
 	klog.InitFlags(nil)
 }
 
-func TestHookConnector(t *testing.T) {
+func TestHookConnectorPreHook(t *testing.T) {
 	flag.Set("v", "4")
 	flag.Parse()
 
@@ -45,7 +45,8 @@ func TestHookConnector(t *testing.T) {
 
 	for i := range testUnits {
 		u := testUnits[i]
-		server.RegisterHandler(u.path, func(w http.ResponseWriter, req *http.Request) {
+		path := HookPath(componentconfig.PreHookType, u.path)
+		server.RegisterHandler(path, func(w http.ResponseWriter, req *http.Request) {
 			if req.Method != http.MethodPost {
 				t.Errorf("expect request method %s to be %s", req.Method, http.MethodPost)
 				return
@@ -79,7 +80,7 @@ func TestHookConnector(t *testing.T) {
 
 	for _, u := range testUnits {
 		p := &PatchData{}
-		if err := hc.Hook(context.Background(), p, u.path, []byte(u.payload)); err != nil {
+		if err := hc.PreHook(context.Background(), p, u.path, []byte(u.payload)); err != nil {
 			t.Errorf("can't perform a hook, %v", err)
 			return
 		}

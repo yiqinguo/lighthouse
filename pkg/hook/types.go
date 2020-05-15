@@ -2,8 +2,9 @@ package hook
 
 import (
 	"context"
-
-	jsoniter "github.com/json-iterator/go"
+	gjson "encoding/json"
+	"net/http"
+	"net/http/httptest"
 )
 
 type PatchData struct {
@@ -11,8 +12,15 @@ type PatchData struct {
 	PatchData []byte `json:"patchData,omitempty"`
 }
 
-type HookHandler interface {
-	Hook(ctx context.Context, patch *PatchData, path string, body []byte) error
+type PostHookData struct {
+	StatusCode int              `json:"statusCode,omitempty"`
+	Body       gjson.RawMessage `json:"body,omitempty"`
 }
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+type HookHandler interface {
+	PreHook(ctx context.Context, patch *PatchData, path string, body []byte) error
+	PostHook(ctx context.Context, patch *PatchData, path string, body []byte) error
+}
+
+type PreHookFunc func(w http.ResponseWriter, r *http.Request) error
+type PostHookFunc func(w *httptest.ResponseRecorder, r *http.Request)

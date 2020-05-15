@@ -108,6 +108,7 @@ func Convert_componentconfig_HookConfigurationItem_To_v1alpha1_HookConfiguration
 func autoConvert_v1alpha1_HookStage_To_componentconfig_HookStage(in *HookStage, out *componentconfig.HookStage, s conversion.Scope) error {
 	out.Method = in.Method
 	out.URLPattern = in.URLPattern
+	out.Type = componentconfig.HookType(in.Type)
 	return nil
 }
 
@@ -119,6 +120,7 @@ func Convert_v1alpha1_HookStage_To_componentconfig_HookStage(in *HookStage, out 
 func autoConvert_componentconfig_HookStage_To_v1alpha1_HookStage(in *componentconfig.HookStage, out *HookStage, s conversion.Scope) error {
 	out.Method = in.Method
 	out.URLPattern = in.URLPattern
+	out.Type = string(in.Type)
 	return nil
 }
 

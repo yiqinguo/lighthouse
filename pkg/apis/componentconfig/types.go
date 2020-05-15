@@ -30,6 +30,7 @@ type HookStageList []HookStage
 type HookStage struct {
 	Method     string
 	URLPattern string
+	Type       HookType
 }
 
 type FailurePolicyType string
@@ -37,4 +38,11 @@ type FailurePolicyType string
 const (
 	PolicyFail   FailurePolicyType = "Fail"
 	PolicyIgnore FailurePolicyType = "Ignore"
+)
+
+type HookType string
+
+const (
+	PreHookType  HookType = "PreHook"
+	PostHookType HookType = "PostHook"
 )

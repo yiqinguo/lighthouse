@@ -1,7 +1,7 @@
 # Summary
 
-Lighthouse is a framework to pre-hook runtime request. With this hook, we can dynamically add options to any other OCI arguments which aren
-'t supported in Kubernetes.
+Lighthouse is a framework to pre-hook/post-hook runtime request/response. With this hook, we can dynamically add options to any other OCI
+ arguments which aren't supported in Kubernetes.
 
 # Architecture
 
@@ -22,6 +22,10 @@ webhooks:
   stages:
   - urlPattern: /containers/create
     method: post
+    type: PreHook
+  - urlPattern: /containers/create
+    method: post
+    type: PostHook
 ```
 
 # How to use it in Kubernetes
