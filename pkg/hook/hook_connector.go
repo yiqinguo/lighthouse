@@ -59,8 +59,10 @@ func (hc *hookerConnector) performHook(ctx context.Context, patch *PatchData, pa
 				return fmt.Errorf("post is not success, status code is %d", resp.StatusCode)
 			}
 
-			klog.V(4).Infof("Decode response %s for %s", path, hc.name)
-			return json.NewDecoder(resp.Body).Decode(patch)
+			if resp.Body != nil {
+				klog.V(4).Infof("Decode response %s for %s", path, hc.name)
+				return json.NewDecoder(resp.Body).Decode(patch)
+			}
 		}
 	}
 

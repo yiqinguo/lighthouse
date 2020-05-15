@@ -243,7 +243,7 @@ func (hm *hookManager) buildPostHookHandlerFunc(handlers []HookHandler) PostHook
 			return
 		}
 
-		klog.V(4).Infof("PostHook request %s, body: %s", r.URL.Path, w.Body.String())
+		klog.V(4).Infof("PostHook request %s, body: %s", r.URL.Path, string(bodyBytes))
 		if err := hm.applyHook(ctx, handlers, componentconfig.PostHookType, r.URL.Path, &bodyBytes); err != nil {
 			klog.Errorf("can't perform postHook, %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -251,13 +251,13 @@ func (hm *hookManager) buildPostHookHandlerFunc(handlers []HookHandler) PostHook
 			return
 		}
 
+		bodyBytes = fixUnexpectedEscape(bodyBytes)
 		if err := json.Unmarshal(bodyBytes, data); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
 
-		klog.V(4).Infof("After postHook request %s, body: %s", r.URL.Path, string(data.Body))
 		w.Write(data.Body)
 	}
 }
@@ -276,13 +276,13 @@ func (hm *hookManager) buildPreHookHandlerFunc(handlers []HookHandler) PreHookFu
 
 		klog.V(4).Infof("PreHook request %s, body: %s", r.URL.Path, string(bodyBytes))
 		if err := hm.applyHook(ctx, handlers, componentconfig.PreHookType, r.URL.Path, &bodyBytes); err != nil {
-			klog.Errorf("can't perform postHook, %v", err)
+			klog.Errorf("can't perform preHook, %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return err
 		}
 
-		klog.V(4).Infof("After preHook request %s, body: %s", r.URL.Path, string(bodyBytes))
+		bodyBytes = fixUnexpectedEscape(bodyBytes)
 		newBody := bytes.NewBuffer(bodyBytes)
 		r.Body = ioutil.NopCloser(newBody)
 		r.ContentLength = int64(newBody.Len())
