@@ -178,7 +178,7 @@ func (hm *hookManager) applyHook(ctx context.Context, handlers []HookHandler, ho
 				}
 			case componentconfig.PostHookType:
 				if err := h.PostHook(ctx, patch, path, *body); err != nil {
-					klog.Errorf("preHook failed, %v", err)
+					klog.Errorf("postHook failed, %v", err)
 					return err
 				}
 			}
