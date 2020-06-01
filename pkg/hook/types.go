@@ -18,8 +18,8 @@ type PostHookData struct {
 }
 
 type HookHandler interface {
-	PreHook(ctx context.Context, patch *PatchData, path string, body []byte) error
-	PostHook(ctx context.Context, patch *PatchData, path string, body []byte) error
+	PreHook(ctx context.Context, patch *PatchData, method, path string, body []byte) error
+	PostHook(ctx context.Context, patch *PatchData, method, path string, body []byte) error
 }
 
 type PreHookFunc func(w http.ResponseWriter, r *http.Request) error

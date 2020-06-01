@@ -80,7 +80,7 @@ func TestHookConnectorPreHook(t *testing.T) {
 
 	for _, u := range testUnits {
 		p := &PatchData{}
-		if err := hc.PreHook(context.Background(), p, u.path, []byte(u.payload)); err != nil {
+		if err := hc.PreHook(context.Background(), p, http.MethodPost, u.path, []byte(u.payload)); err != nil {
 			t.Errorf("can't perform a hook, %v", err)
 			return
 		}

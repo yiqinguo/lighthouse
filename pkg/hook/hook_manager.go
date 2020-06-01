@@ -161,8 +161,8 @@ func (hm *hookManager) InitFromConfig(config *componentconfig.HookConfiguration)
 	return nil
 }
 
-func (hm *hookManager) applyHook(ctx context.Context, handlers []HookHandler, hookType componentconfig.HookType, path string,
-	body *[]byte) error {
+func (hm *hookManager) applyHook(ctx context.Context, handlers []HookHandler, hookType componentconfig.HookType,
+	method, path string, body *[]byte) error {
 	var err error
 
 	for idx, h := range handlers {
@@ -172,12 +172,12 @@ func (hm *hookManager) applyHook(ctx context.Context, handlers []HookHandler, ho
 
 			switch hookType {
 			case componentconfig.PreHookType:
-				if err := h.PreHook(ctx, patch, path, *body); err != nil {
+				if err := h.PreHook(ctx, patch, method, path, *body); err != nil {
 					klog.Errorf("preHook failed, %v", err)
 					return err
 				}
 			case componentconfig.PostHookType:
-				if err := h.PostHook(ctx, patch, path, *body); err != nil {
+				if err := h.PostHook(ctx, patch, method, path, *body); err != nil {
 					klog.Errorf("postHook failed, %v", err)
 					return err
 				}
@@ -216,7 +216,7 @@ func (hm *hookManager) applyHook(ctx context.Context, handlers []HookHandler, ho
 			continue
 		}
 
-		klog.Errorf("can't perform %s, %v", hookType, hookErr)
+		klog.Errorf("can't perform %s %s %s, %v", hookType, method, path, hookErr)
 		return hookErr
 	}
 
@@ -244,7 +244,7 @@ func (hm *hookManager) buildPostHookHandlerFunc(handlers []HookHandler) PostHook
 		}
 
 		klog.V(4).Infof("PostHook request %s, body: %s", r.URL.Path, string(bodyBytes))
-		if err := hm.applyHook(ctx, handlers, componentconfig.PostHookType, r.URL.Path, &bodyBytes); err != nil {
+		if err := hm.applyHook(ctx, handlers, componentconfig.PostHookType, r.Method, r.URL.Path, &bodyBytes); err != nil {
 			klog.Errorf("can't perform postHook, %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
@@ -275,7 +275,7 @@ func (hm *hookManager) buildPreHookHandlerFunc(handlers []HookHandler) PreHookFu
 		}
 
 		klog.V(4).Infof("PreHook request %s, body: %s", r.URL.Path, string(bodyBytes))
-		if err := hm.applyHook(ctx, handlers, componentconfig.PreHookType, r.URL.Path, &bodyBytes); err != nil {
+		if err := hm.applyHook(ctx, handlers, componentconfig.PreHookType, r.Method, r.URL.Path, &bodyBytes); err != nil {
 			klog.Errorf("can't perform preHook, %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
@@ -293,8 +293,10 @@ func (hm *hookManager) buildPreHookHandlerFunc(handlers []HookHandler) PreHookFu
 func (hm *hookManager) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var match mux.RouteMatch
 	if hm.mux.Match(req, &match) {
+		klog.V(5).Infof("Handle request %s %s", req.Method, req.URL.Path)
 		hm.mux.ServeHTTP(w, req)
 		return
 	}
+	klog.V(5).Infof("Unhandled request %s %s", req.Method, req.URL.Path)
 	hm.backend.ServeHTTP(w, req)
 }
